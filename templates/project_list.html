@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Project Sheets{% endblock %}
+
+{% block content %}
+
+<div class="container">
+
+    <h2>Project Sheets</h2>
+
+    <!-- 🔍 FILTER FORM -->
+    <form method="get" class="filter-form">
+        <div class="filter-row">
+
+            <!-- Search by Project Number -->
+            <input
+                type="text"
+                name="project_number"
+                placeholder="Search Project Number"
+                value="{{ search_project_number|default:'' }}"
+            />
+
+            <!-- Country Filter -->
+            <select name="country">
+                <option value="">All Countries</option>
+                {% for c in countries %}
+                    <option value="{{ c }}" {% if c == selected_country %}selected{% endif %}>
+                        {{ c }}
+                    </option>
+                {% endfor %}
+            </select>
+
+            <!-- Language Filter -->
+            <select name="language">
+                <option value="">All Languages</option>
+                {% for code, name in languages %}
+                    <option value="{{ code }}" {% if code == selected_language %}selected{% endif %}>
+                        {{ name }}
+                    </option>
+                {% endfor %}
+            </select>
+
+            <button type="submit">Filter</button>
+            <a href="{% url 'project_list' %}">Reset</a>
+        </div>
+    </form>
+
+    <!-- 📋 PROJECT TABLE -->
+    <table class="project-table">
+        <thead>
+            <tr>
+                <th>Project No.</th>
+                <th>Project Title</th>
+                <th>Country</th>
+                <th>Location</th>
+                <th>Language</th>
+                <th>Start Date</th>
+                <th>End Date</th>
+                <th>Images</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for project in projects %}
+                <tr
+                    title="View project details"
+                    onclick="window.location.href='{% url 'project_detail' project.id %}'"
+                    style = "cursor: pointer;"
+                >
+                    <td>{{ project.project_number }}</td>
+                    <td>{{ project.project_title }}</td>
+                    <td>{{ project.country }}</td>
+                    <td>{{ project.location }}</td>
+                    <td>{{ project.get_language_display }}</td>
+                    <td>{{ project.date_from }}</td>
+                    <td>{{ project.date_until|default:"—" }}</td>
+                    <td>{{ project.images.count }}</td>
+                </tr>
+            {% empty %}
+                <tr class="empty-row">
+                    <td colspan="8">No projects found</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+</div>
+{% endblock %}

@@ -1,0 +1,46 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load socialaccount %}
+
+{% block title %}Home | Blatt Portal{% endblock %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'home.css' %}">
+{% endblock %}
+
+{% block content %}
+    <section class="home-shell">
+        <div class="home-hero">
+            {% if user.is_authenticated %}
+                <p class="home-kicker">Project Workspace</p>
+                <h1 class="home-title">Welcome back, {{ user.first_name|default:user.username }}.</h1>
+                <p class="home-subtitle">Jump into your active projects or create a fresh project sheet in one click.</p>
+
+                <div class="home-actions">
+                    <a href="{% url 'project_list' %}" class="home-card home-card-list">
+                        <span class="home-card-label">Open Projects</span>
+                        <h2>View existing project sheets</h2>
+                        <p>Browse all saved sheets and continue where you left off.</p>
+                    </a>
+
+                    <a href="{% url 'create_project_sheet' %}" class="home-card home-card-create">
+                        <span class="home-card-label">Create Project</span>
+                        <h2>Start a new project sheet</h2>
+                        <p>Generate a new sheet and capture project data from scratch.</p>
+                    </a>
+                </div>
+            {% else %}
+                <p class="home-kicker">DigiBlatt Portal</p>
+                <h1 class="home-title">Engineering project sheets, simplified.</h1>
+                <p class="home-subtitle">Sign in with your company account to access and manage your digital project documentation.</p>
+
+                <div class="home-guest-panel">
+                    <a href="{% provider_login_url 'microsoft' %}" class="home-login-btn">
+                        Login with Microsoft
+                    </a>
+                    <p class="home-guest-note">Need elevated permissions? Use the Admin login from the profile menu.</p>
+                </div>
+            {% endif %}
+        </div>
+    </section>
+{% endblock %}

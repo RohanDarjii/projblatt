@@ -1,0 +1,185 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Project {{ project.project_number }}{% endblock %}
+
+{% block content %}
+<div class="pd-shell">
+    <header class="pd-hero">
+        <div>
+            <p class="pd-kicker">Project Sheet Overview</p>
+            <h1>{{ project.project_title }}</h1>
+            <p class="pd-subtitle">{{ project.heading }} • {{ project.project_number }}</p>
+        </div>
+        <div class="pd-hero-meta">
+            <span>{{ project.country }}</span>
+            <span>{{ project.location }}</span>
+            <span>{{ project.get_language_display }}</span>
+        </div>
+    </header>
+
+    <section class="pd-stats-grid">
+        <article class="pd-stat-card">
+            <h3>Duration</h3>
+            <p>{{ project.processing_periods_months|default:"-" }}</p>
+            <small>months</small>
+        </article>
+        <article class="pd-stat-card">
+            <h3>Total Fee</h3>
+            <p>{{ project.total_fee|default:"-" }}</p>
+            <small>project budget</small>
+        </article>
+        <article class="pd-stat-card">
+            <h3>Total Staff</h3>
+            <p>{{ project.staff_total|default:"-" }}</p>
+            <small>people</small>
+        </article>
+        <article class="pd-stat-card">
+            <h3>Images</h3>
+            <p>{{ project.images.count }}</p>
+            <small>attached photos</small>
+        </article>
+    </section>
+
+    <div class="pd-layout">
+        <main class="pd-main">
+            <section class="pd-card">
+                <h2>General Information</h2>
+                <div class="pd-info-grid">
+                    <div>
+                        <span class="pd-label">Project Number</span>
+                        <p>{{ project.project_number }}</p>
+                    </div>
+                    <div>
+                        <span class="pd-label">Object Name</span>
+                        <p>{{ project.object_name|default:"-" }}</p>
+                    </div>
+                    <div class="pd-span-2">
+                        <span class="pd-label">Client Details</span>
+                        <p>{{ project.client_info|linebreaksbr }}</p>
+                    </div>
+                    <div>
+                        <span class="pd-label">Financier</span>
+                        <p>{{ project.financier|default:"-" }}</p>
+                    </div>
+                    <div>
+                        <span class="pd-label">Created On</span>
+                        <p>{{ project.created_at|date:"d M Y" }}</p>
+                    </div>
+                </div>
+            </section>
+
+            <section class="pd-card">
+                <h2>Descriptions</h2>
+                <div class="pd-stack">
+                    <div>
+                        <span class="pd-label">Performance Summary</span>
+                        <p>{{ project.performance_short|linebreaksbr }}</p>
+                    </div>
+                    <div>
+                        <span class="pd-label">Task Description</span>
+                        <p>{{ project.task_description|linebreaksbr }}</p>
+                    </div>
+                    <div>
+                        <span class="pd-label">Performance Description</span>
+                        <p>{{ project.performance_description|linebreaksbr }}</p>
+                    </div>
+                </div>
+            </section>
+
+            <section class="pd-card">
+                <h2>Timeline and Costs</h2>
+                <div class="pd-info-grid">
+                    <div>
+                        <span class="pd-label">Start Date</span>
+                        <p>{{ project.date_from|date:"d M Y" }}</p>
+                    </div>
+                    <div>
+                        <span class="pd-label">End Date</span>
+                        <p>{% if project.date_until %}{{ project.date_until|date:"d M Y" }}{% else %}-{% endif %}</p>
+                    </div>
+                    <div>
+                        <span class="pd-label">Kocks Fee</span>
+                        <p>{{ project.fee_kocks|default:"-" }}</p>
+                    </div>
+                    <div>
+                        <span class="pd-label">Planning Fee</span>
+                        <p>{{ project.fee_planning|default:"-" }}</p>
+                    </div>
+                    <div class="pd-span-2">
+                        <span class="pd-label">Construction Management Fee</span>
+                        <p>{{ project.fee_construction|default:"-" }}</p>
+                    </div>
+                </div>
+            </section>
+
+            <section class="pd-card">
+                <h2>Technical and Team Data</h2>
+                <div class="pd-info-grid">
+                    <div class="pd-span-2">
+                        <span class="pd-label">Technical Headings</span>
+                        <p>{{ project.tech_value_header|default:"-"|linebreaksbr }}</p>
+                    </div>
+                    <div class="pd-span-2">
+                        <span class="pd-label">Technical Values</span>
+                        <p>{{ project.tech_value_text|default:"-"|linebreaksbr }}</p>
+                    </div>
+                    <div>
+                        <span class="pd-label">Kocks Staff</span>
+                        <p>{{ project.staff_kocks|default:"-" }}</p>
+                    </div>
+                    <div>
+                        <span class="pd-label">Total Man-Months</span>
+                        <p>{{ project.man_months_total|default:"-" }}</p>
+                    </div>
+                    <div>
+                        <span class="pd-label">Kocks Man-Months</span>
+                        <p>{{ project.man_months_kocks|default:"-" }}</p>
+                    </div>
+                    <div class="pd-span-2">
+                        <span class="pd-label">Senior Staff</span>
+                        <p>{{ project.senior_staff_names|default:"-"|linebreaksbr }}</p>
+                    </div>
+                    <div class="pd-span-2">
+                        <span class="pd-label">Partner Companies</span>
+                        <p>{{ project.partner_companies|default:"-"|linebreaksbr }}</p>
+                    </div>
+                </div>
+            </section>
+
+            {% if project.images.exists %}
+            <section class="pd-card">
+                <h2>Project Gallery</h2>
+                <div class="pd-gallery">
+                    {% for image in project.images.all %}
+                        <figure class="pd-photo">
+                            <img src="{% url 'serve_project_image' image.id %}" alt="Project image {{ forloop.counter }}">
+                            <figcaption>Image {{ forloop.counter }}</figcaption>
+                        </figure>
+                    {% endfor %}
+                </div>
+            </section>
+            {% endif %}
+        </main>
+
+        <aside class="pd-sidebar">
+            <section class="pd-card pd-sticky">
+                <h3>Quick Actions</h3>
+                {% if can_edit %}
+                <a href="{% url 'edit_project_sheet' project.id %}" class="pd-btn" style="background-color: #417690; color: white;">✎ Edit Project</a>
+                {% endif %}
+                <a href="#" class="pd-btn pd-btn-disabled" aria-disabled="true">Export Word (soon)</a>
+                <a href="#" class="pd-btn pd-btn-disabled" aria-disabled="true">Export PDF (soon)</a>
+                <a href="{% url 'project_list' %}" class="pd-btn pd-btn-outline">Back to Projects</a>
+            </section>
+
+            {% if project.captions %}
+            <section class="pd-card">
+                <h3>Captions</h3>
+                <p class="pd-captions">{{ project.captions|linebreaksbr }}</p>
+            </section>
+            {% endif %}
+        </aside>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,232 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Edit Project Sheet{% endblock %}
+{% block content %}
+<div class="cps-shell">
+    <header class="cps-hero">
+        <div>
+            <p class="cps-kicker">Project Documentation</p>
+            <h1>Edit Project Sheet</h1>
+            <p class="cps-subtitle">Update project details, manage photos, and save your changes.</p>
+        </div>
+        <a href="{% url 'project_detail' project.id %}" class="cps-secondary-action">Back to Project</a>
+    </header>
+
+    <form method="post" enctype="multipart/form-data" class="cps-form">
+        {% csrf_token %}
+        {{ form.non_field_errors }}
+
+        <div class="cps-layout">
+            <main class="cps-main">
+                <section class="cps-card cps-card-highlight">
+                    <div class="cps-card-title-row">
+                        <h2>Document Settings</h2>
+                        <span class="cps-chip">Required</span>
+                    </div>
+                    <div class="cps-grid cps-grid-2">
+                        <div class="cps-field">
+                            <label for="{{ form.language.id_for_label }}">Report Language</label>
+                            {{ form.language }}
+                            <p class="cps-help">Select the target language used for generated project documents.</p>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="cps-card">
+                    <h2>General Information</h2>
+                    <div class="cps-grid cps-grid-2">
+                        <div class="cps-field">
+                            <label for="{{ form.project_number.id_for_label }}">Project Number</label>
+                            {{ form.project_number }}
+                        </div>
+                        <div class="cps-field">
+                            <label for="{{ form.heading.id_for_label }}">Heading</label>
+                            {{ form.heading }}
+                        </div>
+                        <div class="cps-field cps-span-2">
+                            <label for="{{ form.project_title.id_for_label }}">Project Title</label>
+                            {{ form.project_title }}
+                        </div>
+                        <div class="cps-field">
+                            <label for="{{ form.country.id_for_label }}">Country</label>
+                            {{ form.country }}
+                        </div>
+                        <div class="cps-field">
+                            <label for="{{ form.location.id_for_label }}">Location</label>
+                            {{ form.location }}
+                        </div>
+                        <div class="cps-field cps-span-2">
+                            <label for="{{ form.client_info.id_for_label }}">Client Details</label>
+                            {{ form.client_info }}
+                        </div>
+                        <div class="cps-field">
+                            <label for="{{ form.financier.id_for_label }}">Financier</label>
+                            {{ form.financier }}
+                        </div>
+                        <div class="cps-field">
+                            <label for="{{ form.object_name.id_for_label }}">Object Name</label>
+                            {{ form.object_name }}
+                        </div>
+                        <div class="cps-field cps-span-2">
+                            <label for="{{ form.performance_short.id_for_label }}">Performance Summary</label>
+                            {{ form.performance_short }}
+                        </div>
+                        <div class="cps-field cps-span-2">
+                            <label for="{{ form.task_description.id_for_label }}">Task Description</label>
+                            {{ form.task_description }}
+                        </div>
+                        <div class="cps-field cps-span-2">
+                            <label for="{{ form.performance_description.id_for_label }}">Performance Description</label>
+                            {{ form.performance_description }}
+                        </div>
+                    </div>
+                </section>
+
+                <section class="cps-card">
+                    <h2>Timeline and Financials</h2>
+                    <div class="cps-subgroup">
+                        <h3>Project Duration</h3>
+                        <div class="cps-grid cps-grid-3">
+                            <div class="cps-field">
+                                <label for="{{ form.date_from.id_for_label }}">Start Date</label>
+                                {{ form.date_from }}
+                            </div>
+                            <div class="cps-field">
+                                <label for="{{ form.date_until.id_for_label }}">End Date</label>
+                                {{ form.date_until }}
+                            </div>
+                            <div class="cps-field">
+                                <label for="{{ form.processing_periods_months.id_for_label }}">Duration (Months)</label>
+                                {{ form.processing_periods_months }}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="cps-subgroup">
+                        <h3>Fees</h3>
+                        <div class="cps-grid cps-grid-2">
+                            <div class="cps-field">
+                                <label for="{{ form.total_fee.id_for_label }}">Total Fee</label>
+                                {{ form.total_fee }}
+                            </div>
+                            <div class="cps-field">
+                                <label for="{{ form.fee_kocks.id_for_label }}">Kocks Fee</label>
+                                {{ form.fee_kocks }}
+                            </div>
+                            <div class="cps-field">
+                                <label for="{{ form.fee_planning.id_for_label }}">Planning Fee</label>
+                                {{ form.fee_planning }}
+                            </div>
+                            <div class="cps-field">
+                                <label for="{{ form.fee_construction.id_for_label }}">Construction Management Fee</label>
+                                {{ form.fee_construction }}
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="cps-card">
+                    <h2>Technical Data and Team</h2>
+                    <div class="cps-grid cps-grid-2">
+                        <div class="cps-field cps-span-2">
+                            <label for="{{ form.tech_value_header.id_for_label }}">Technical Headings</label>
+                            {{ form.tech_value_header }}
+                        </div>
+                        <div class="cps-field cps-span-2">
+                            <label for="{{ form.tech_value_text.id_for_label }}">Technical Values</label>
+                            {{ form.tech_value_text }}
+                        </div>
+                    </div>
+
+                    <div class="cps-grid cps-grid-4">
+                        <div class="cps-field">
+                            <label for="{{ form.staff_total.id_for_label }}">Total Staff</label>
+                            {{ form.staff_total }}
+                        </div>
+                        <div class="cps-field">
+                            <label for="{{ form.staff_kocks.id_for_label }}">Kocks Staff</label>
+                            {{ form.staff_kocks }}
+                        </div>
+                        <div class="cps-field">
+                            <label for="{{ form.man_months_total.id_for_label }}">Total Months</label>
+                            {{ form.man_months_total }}
+                        </div>
+                        <div class="cps-field">
+                            <label for="{{ form.man_months_kocks.id_for_label }}">Kocks Months</label>
+                            {{ form.man_months_kocks }}
+                        </div>
+                    </div>
+
+                    <div class="cps-grid cps-grid-2">
+                        <div class="cps-field cps-span-2">
+                            <label for="{{ form.senior_staff_names.id_for_label }}">Senior Staff</label>
+                            {{ form.senior_staff_names }}
+                        </div>
+                        <div class="cps-field cps-span-2">
+                            <label for="{{ form.partner_companies.id_for_label }}">Partner Companies</label>
+                            {{ form.partner_companies }}
+                        </div>
+                    </div>
+                </section>
+
+                <section class="cps-card">
+                    <h2>Photos and Captions</h2>
+                    
+                    {% if existing_images %}
+                    <div class="cps-alert" style="background-color: #e8f4f8; border-left: 4px solid #417690; padding: 12px; margin-bottom: 16px;">
+                        <strong>Existing Images</strong>
+                        <p>Check the boxes below to delete images, then save the form.</p>
+                    </div>
+                    
+                    <div style="margin-bottom: 20px; display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 12px;">
+                        {% for image in existing_images %}
+                        <div style="border: 1px solid #ddd; border-radius: 6px; padding: 8px; text-align: center; position: relative;">
+                            <img src="{% url 'serve_project_image' image.id %}" style="max-width: 100%; max-height: 100px; border-radius: 4px;">
+                            <label style="display: block; margin-top: 8px; font-size: 12px; cursor: pointer;">
+                                <input type="checkbox" name="delete_images" value="{{ image.id }}" style="margin-right: 4px;">
+                                Delete
+                            </label>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+
+                    <div class="cps-alert">
+                        <strong>Upload New Images</strong>
+                        <p>Use one multi-selection upload so image order is preserved from your local file picker.</p>
+                    </div>
+                    <div class="cps-grid cps-grid-2">
+                        <div class="cps-field cps-span-2">
+                            <label for="{{ form.photos.id_for_label }}">Upload Additional Images</label>
+                            {{ form.photos }}
+                            <p class="cps-help">You can select multiple files at once. Supported types are image files.</p>
+                        </div>
+                        <div class="cps-field cps-span-2">
+                            <label for="{{ form.captions.id_for_label }}">Captions</label>
+                            {{ form.captions }}
+                            <p class="cps-help">Add one caption per line if you want to map captions by sequence.</p>
+                        </div>
+                    </div>
+                </section>
+
+                <div class="cps-actions">
+                    <a href="{% url 'project_detail' project.id %}" class="cps-btn cps-btn-ghost">Cancel</a>
+                    <button type="submit" class="cps-btn cps-btn-primary">Save Changes</button>
+                </div>
+            </main>
+
+            <aside class="cps-side">
+                <section class="cps-card cps-side-card">
+                    <h3>Editing Guide</h3>
+                    <ul>
+                        <li>Update any project details above.</li>
+                        <li>Check boxes to delete unwanted images.</li>
+                        <li>Upload new images as needed.</li>
+                        <li>Click Save to apply all changes.</li>
+                    </ul>
+                </section>
+            </aside>
+        </div>
+    </form>
+</div>
+{% endblock %}

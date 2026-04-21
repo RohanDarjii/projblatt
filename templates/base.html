@@ -1,0 +1,66 @@
+{% load static %}
+{% load socialaccount %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Blatt Portal{% endblock %}</title>
+    <link rel="stylesheet" href="{% static 'navbar.css' %}">
+    <link rel="stylesheet" href="{% static 'create_project_sheet.css' %}">
+    <link rel="stylesheet" href="{% static 'project_list.css' %}">
+    <link rel="stylesheet" href="{% static 'project_detail.css' %}">
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-brand">
+                <a href="{% url 'home' %}" class="brand-link">
+                    <span class="brand-badge">KB</span>
+                    <span class="brand-name">KOCKS GmbH</span>
+                </a>
+            </div>
+
+            <div class="nav-links">
+                <a href="{% url 'home' %}" class="nav-item">Home</a>
+                {% if user.is_authenticated %}
+                    <a href="{% url 'project_list' %}" class="nav-item">Projects</a>
+                    <a href="{% url 'create_project_sheet' %}" class="nav-item nav-item-cta">New Sheet</a>
+                {% endif %}
+
+                {% if user.is_authenticated %}
+                    <div class="dropdown">
+                        <button class="btn-user">
+                            {{ user.first_name|default:user.username }} ▾
+                        </button>
+                        <div class="dropdown-content">
+                            <a href="{% url 'admin:index' %}">Admin Panel</a>
+                            
+                            <form method="post" action="{% url 'account_logout' %}">
+                                {% csrf_token %}
+                                <button type="submit" class="logout-btn">Logout</button>
+                            </form>
+                        </div>
+                    </div>
+                {% else %}
+                    <div class="dropdown">
+                        <button class="btn-login">Login ▾</button>
+                        <div class="dropdown-content">
+                            <a href="{% provider_login_url 'microsoft' %}">Client Login</a>
+                            <a href="{% url 'admin:login' %}">Admin Login</a>
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </nav>
+
+    <div class="main-container">
+        {% block content %}
+        {% endblock %}
+    </div>
+
+</body>
+</html>
