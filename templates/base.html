@@ -18,9 +18,11 @@
         <div class="nav-container">
             <div class="nav-brand">
                 <a href="{% url 'home' %}" class="brand-link">
-                    <span class="brand-badge">KB</span>
-                    <span class="brand-name">KOCKS GmbH</span>
+                <img src="{% static 'home/images/logo_kocks.png' %}"
+                    alt="KOCKS GmbH"
+                    class="logo-img">
                 </a>
+                
             </div>
 
             <div class="nav-links">
@@ -29,6 +31,7 @@
                     <a href="{% url 'project_list' %}" class="nav-item">Projects</a>
                     <a href="{% url 'create_project_sheet' %}" class="nav-item nav-item-cta">New Sheet</a>
                 {% endif %}
+                
 
                 {% if user.is_authenticated %}
                     <div class="dropdown">

@@ -89,6 +89,9 @@ def project_detail_view(request, pk):
     
     # Check if user has permission to edit
     can_edit = request.user.has_perm('projectsheets.change_projectsheet')
+    
+    # Check if user has permission to delete
+    can_delete = request.user.has_perm('projectsheets.delete_projectsheet')
 
     # Load form with instance
     form = ProjectSheetForm(instance=project)
@@ -101,7 +104,18 @@ def project_detail_view(request, pk):
         "form": form,
         "project": project,
         "can_edit": can_edit,
+        "can_delete": can_delete,
     })
+
+@login_required(login_url='home')
+def delete_project_sheet(request, pk):
+    project = get_object_or_404(ProjectSheet, pk=pk)
+    if not request.user.has_perm('projectsheets.delete_projectsheet'):
+        raise PermissionDenied("You don't have permission to delete this project.")
+    if request.method == 'POST':
+        project.delete()
+        return redirect('project_list')
+    return render(request, 'delete_project_sheet.html', {'project': project})
 
 
 @login_required(login_url='home')

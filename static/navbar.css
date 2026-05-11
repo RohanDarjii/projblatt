@@ -30,7 +30,7 @@ a {
     color: white;
     border-bottom: 1px solid rgba(255, 255, 255, 0.22);
     background:
-        linear-gradient(120deg, rgba(20, 46, 68, 0.94), rgba(16, 86, 132, 0.9)),
+        linear-gradient(120deg, rgba(202, 210, 218, 0.94), rgba(86, 170, 225, 0.9)),
         radial-gradient(circle at 85% 20%, rgba(126, 211, 146, 0.18), transparent 45%);
     box-shadow: 0 10px 28px rgba(10, 29, 45, 0.25);
 }
@@ -46,9 +46,17 @@ a {
 }
 
 .brand-link {
-    display: inline-flex;
+    display:flex;
     align-items: center;
-    gap: 10px;
+}
+
+.logo-img {
+    height: 50px;      /* adjust size here */
+    width: auto;
+    object-fit: contain;
+    display: block;
+    
+    
 }
 
 .brand-badge {
