@@ -172,7 +172,7 @@
                 <a href="{% url 'delete_project_sheet' project.id %}" class="pd-btn" style="background-color: #dc3545; color: white;">🗑️ Delete Project</a>
                 {% endif %}
                 <a href="#" class="pd-btn pd-btn-disabled" aria-disabled="true">Export Word (soon)</a>
-                <a href="#" class="pd-btn pd-btn-disabled" aria-disabled="true">Export PDF (soon)</a>
+                <a href="{% url 'view_project_pdf' project.id %}" class="pd-btn pd-btn-outline" aria-disabled="true">Export PDF (soon)</a>
                 <a href="{% url 'project_list' %}" class="pd-btn pd-btn-outline">Back to Projects</a>
             </section>
 

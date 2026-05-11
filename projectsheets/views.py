@@ -4,6 +4,7 @@ from .models import ProjectImage, ProjectSheet
 from .forms import ProjectSheetForm
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
+from .utils import PDFGenerator
 
 # Create your views here.
 @login_required(login_url='home')
@@ -163,3 +164,28 @@ def edit_project_sheet(request, pk):
         "is_edit": True,
         "existing_images": project.images.all(),
     })
+
+
+@login_required(login_url='home')
+def view_project_pdf(request, pk):
+    project = get_object_or_404(ProjectSheet, pk=pk)
+    
+    try:
+        # Check permission - only users with view_projectsheet permission can export
+        if not request.user.has_perm('projectsheets.view_projectsheet'):
+            raise PermissionDenied("You don't have permission to export this project.")
+        
+        # Generate PDF content using the utility function
+        pdf_content = PDFGenerator.generate_pdf(project, include_images=True)
+
+        # Create HTTP response with PDF content
+        response = HttpResponse(pdf_content, content_type='application/pdf')
+        filename = f'project_{project.project_title}.pdf'
+        response['Content-Disposition'] = f'inline; filename="{filename}"'
+        
+        return response
+    
+    except Exception as e:
+        print(f"Error generating PDF: {e}")
+        return HttpResponse("An error occurred while generating the PDF.", status=500)
+        

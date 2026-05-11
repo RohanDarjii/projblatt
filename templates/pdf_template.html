@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<style>
+@page { size: A4; margin: 20mm 18mm; }
+body { font-family: Arial, sans-serif; font-size: 12px; color: #111; margin: 0; padding: 0; }
+.header { margin-bottom: 10px; display: table; width: 100%; }
+.header > div { display: table-cell; vertical-align: top; }
+.title { font-size: 28px; font-weight: bold; }
+.logo { text-align: right; color: #1f4e8c; font-weight: bold; font-size: 26px; }
+.logo span { font-size: 12px; letter-spacing: 2px; display: block; }
+.logo img { height: 50px; width: auto; }
+.blue-line { height: 10px; background: #1f4e8c; margin: 8px 0 15px 0; }
+.container { display: table; width: 100%; gap: 25px; }
+.left { width: 65%; display: table-cell; vertical-align: top; padding-right: 25px; }
+.right { width: 35%; display: table-cell; vertical-align: top; }
+.main-image { width: 100%; height: 260px; object-fit: cover; margin-bottom: 15px; }
+.small-img { width: 100%; margin-top: 10px; height: 200px;}
+.section-title { font-weight: bold; margin: 15px 0 5px 0; }
+p { margin-bottom: 10px; text-align: justify; line-height: 1.5; }
+.side-block { margin-bottom: 12px; }
+.side-title { background: #1f4e8c; color: white; padding: 4px 6px; font-size: 11px; font-weight: bold; }
+.side-content { padding: 6px 2px; font-size: 11px; }
+ul { margin: 5px 0 0 15px; }
+.image-gallery { margin-top: 20px; }
+.img-row { display: table; width: 100%; }
+.img-cell { width: 48%; display: table-cell; padding-right: 2%; vertical-align: top; margin-bottom: 10px; }
+.img-cell img { width: 100%; height: auto; }
+.page-break { page-break-before: always; }
+.footer { position: fixed; bottom: 10mm; left: 18mm; right: 18mm; font-size: 9px; display: table; width: calc(100% - 36mm); }
+.footer > div { display: table-cell; }
+</style>
+</head>
+<body>
+
+<!-- PAGE 1 -->
+<div class="header">
+    <div class="title">{{ project.project_title }}</div>
+    <div class="logo">
+        {% if logo %}
+        <img src="{{ logo }}" alt="KOCKS Logo">
+        {% else %}
+        KOCKS<br><span>ENGINEERS</span>
+        {% endif %}
+    </div>
+</div>
+<div class="blue-line"></div>
+
+<div class="container">
+    <div class="left">
+        {% if images %}
+        <img class="main-image" src="data:image/jpeg;base64,{{ images.0.data }}" />
+        {% endif %}
+
+        {% if project.task_description %}
+        <div class="section-title">The Task</div>
+        <p>{{ project.task_description|linebreaks }}</p>
+        {% endif %}
+
+        {% if project.performance_short %}
+        <div class="section-title">The Services</div>
+        <p>{{ project.performance_short|linebreaks }}</p>
+        {% endif %}
+
+        {% if project.performance_description %}
+        <p>{{ project.performance_description|linebreaks }}</p>
+        {% endif %}
+    </div>
+
+    <div class="right">
+        {% if project.object_name %}
+        <div class="side-block">
+            <div class="side-title">PROJECT</div>
+            <div class="side-content">{{ project.object_name }}</div>
+        </div>
+        {% endif %}
+
+        {% if project.client_info %}
+        <div class="side-block">
+            <div class="side-title">CLIENT</div>
+            <div class="side-content">{{ project.client_info }}</div>
+        </div>
+        {% endif %}
+
+        {% if project.partner_companies %}
+        <div class="side-block">
+            <div class="side-title">SERVICES</div>
+            <div class="side-content">{{ project.partner_companies }}</div>
+        </div>
+        {% endif %}
+
+        {% if project.location or project.country %}
+        <div class="side-block">
+            <div class="side-title">LOCATION</div>
+            <div class="side-content">{% if project.location %}{{ project.location }}{% if project.country %}, {% endif %}{% endif %}{{ project.country }}</div>
+        </div>
+        {% endif %}
+
+        {% if project.date_from or project.date_until %}
+        <div class="side-block">
+            <div class="side-title">PERIOD</div>
+            <div class="side-content">{% if project.date_from %}{{ project.date_from|date:"Y" }}{% endif %}{% if project.date_from and project.date_until %} – {% endif %}{% if project.date_until %}{{ project.date_until|date:"Y" }}{% endif %}</div>
+        </div>
+        {% endif %}
+
+        {% if images|length > 1 %}
+        <img class="small-img" src="data:image/jpeg;base64,{{ images.1.data }}" />
+        <img class="small-img" src="data:image/jpeg;base64,{{ images.2.data }}" />
+        {% endif %}
+    </div>
+</div>
+
+<div class="footer">
+    <div>KOCKS GmbH</div>
+    <div>April 2026</div>
+    <div>Page 1</div>
+</div>
+
+<!-- PAGE 2 -->
+<div class="page-break"></div>
+
+<div class="header">
+    <div></div>
+    <div class="logo">
+        {% if logo %}
+        <img src="{{ logo }}" alt="KOCKS Logo">
+        {% else %}
+        KOCKS<br><span>ENGINEERS</span>
+        {% endif %}
+    </div>
+</div>
+<div class="blue-line"></div>
+
+<div class="container">
+    <div class="left">
+        {% if project.performance_description %}
+        <div class="section-title">Technical Description</div>
+        <p>{{ project.performance_description|linebreaks }}</p>
+        {% endif %}
+
+        {% if project.tech_value_text %}
+        <div class="section-title">Process Engineering</div>
+        <p>{{ project.tech_value_text|linebreaks }}</p>
+        {% endif %}
+    </div>
+
+    
+    <div class="right">
+        {% if project.total_fee %}
+        <div class="side-block">
+            <div class="side-title">INVESTMENT</div>
+            <div class="side-content">{{ project.total_fee }}</div>
+        </div>
+        {% endif %}
+
+        {% if project.performance_short %}
+        <div class="side-block">
+            <div class="side-title">BIOLOGICAL SYSTEM</div>
+            <div class="side-content">{{ project.performance_short|linebreaks }}</div>
+        </div>
+        {% endif %}
+
+        {% if project.partner_companies %}
+        <div class="side-block">
+            <div class="side-title">MECHANICAL SYSTEM</div>
+            <div class="side-content">{{ project.partner_companies|linebreaks }}</div>
+        </div>
+        {% endif %}
+
+                {% if images|length > 1 %}
+        <img class="small-img" src="data:image/jpeg;base64,{{ images.3.data }}" />
+        <img class="small-img" src="data:image/jpeg;base64,{{ images.4.data }}" />
+        <img class="small-img" src="data:image/jpeg;base64,{{ images.5.data }}" />
+        <img class="small-img" src="data:image/jpeg;base64,{{ images.6.data }}" />
+        {% endif %}
+    </div>
+</div>
+</body>
+</html>
