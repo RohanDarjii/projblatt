@@ -3,7 +3,23 @@
 <head>
 <meta charset="UTF-8">
 <style>
-@page { size: A4; margin: 20mm 18mm; }
+@page { size: A4; margin: 20mm 18mm;
+    
+    @bottom-left {
+        content: "KOCKS GmbH";
+        font-size: 9px;
+    }
+
+    @bottom-center {
+        content: string(currentDate);
+        font-size: 9px;
+    }
+
+    @bottom-right {
+        content: "Page " counter(page) " of " counter(pages);
+        font-size: 9px;
+    }
+}
 body { font-family: Arial, sans-serif; font-size: 12px; color: #111; margin: 0; padding: 0; }
 .header { margin-bottom: 10px; display: table; width: 100%; }
 .header > div { display: table-cell; vertical-align: top; }
@@ -33,7 +49,7 @@ ul { margin: 5px 0 0 15px; }
 </style>
 </head>
 <body>
-
+<div style="string-set: currentDate '{{ current_date|date:"d.m.Y" }}';"></div>
 <!-- PAGE 1 -->
 <div class="header">
     <div class="title">{{ project.project_title }}</div>
@@ -50,16 +66,16 @@ ul { margin: 5px 0 0 15px; }
 <div class="container">
     <div class="left">
         {% if images %}
-        <img class="main-image" src="data:image/jpeg;base64,{{ images.0.data }}" />
+        <img class="main-image" src="data:{{ images.0.content_type }};base64,{{ images.0.data }}" />
         {% endif %}
 
         {% if project.task_description %}
-        <div class="section-title">The Task</div>
+        <div class="section-title">{{ labels.the_task }}</div>
         <p>{{ project.task_description|linebreaks }}</p>
         {% endif %}
 
         {% if project.performance_short %}
-        <div class="section-title">The Services</div>
+        <div class="section-title">{{ labels.the_services }}</div>
         <p>{{ project.performance_short|linebreaks }}</p>
         {% endif %}
 
@@ -71,50 +87,44 @@ ul { margin: 5px 0 0 15px; }
     <div class="right">
         {% if project.object_name %}
         <div class="side-block">
-            <div class="side-title">PROJECT</div>
+            <div class="side-title">{{ labels.project }}</div>
             <div class="side-content">{{ project.object_name }}</div>
         </div>
         {% endif %}
 
         {% if project.client_info %}
         <div class="side-block">
-            <div class="side-title">CLIENT</div>
+            <div class="side-title">{{ labels.client }}</div>
             <div class="side-content">{{ project.client_info }}</div>
         </div>
         {% endif %}
 
         {% if project.partner_companies %}
         <div class="side-block">
-            <div class="side-title">SERVICES</div>
+            <div class="side-title">{{ labels.services }}</div>
             <div class="side-content">{{ project.partner_companies }}</div>
         </div>
         {% endif %}
 
         {% if project.location or project.country %}
         <div class="side-block">
-            <div class="side-title">LOCATION</div>
+            <div class="side-title">{{ labels.location }}</div>
             <div class="side-content">{% if project.location %}{{ project.location }}{% if project.country %}, {% endif %}{% endif %}{{ project.country }}</div>
         </div>
         {% endif %}
 
         {% if project.date_from or project.date_until %}
         <div class="side-block">
-            <div class="side-title">PERIOD</div>
+            <div class="side-title">{{ labels.period }}</div>
             <div class="side-content">{% if project.date_from %}{{ project.date_from|date:"Y" }}{% endif %}{% if project.date_from and project.date_until %} – {% endif %}{% if project.date_until %}{{ project.date_until|date:"Y" }}{% endif %}</div>
         </div>
         {% endif %}
 
         {% if images|length > 1 %}
-        <img class="small-img" src="data:image/jpeg;base64,{{ images.1.data }}" />
-        <img class="small-img" src="data:image/jpeg;base64,{{ images.2.data }}" />
+        <img class="small-img" src="data:{{ images.1.content_type }};base64,{{ images.1.data }}" />
+        {% if images|length > 2 %}<img class="small-img" src="data:{{ images.2.content_type }};base64,{{ images.2.data }}" />{% endif %}
         {% endif %}
     </div>
-</div>
-
-<div class="footer">
-    <div>KOCKS GmbH</div>
-    <div>April 2026</div>
-    <div>Page 1</div>
 </div>
 
 <!-- PAGE 2 -->
@@ -135,12 +145,12 @@ ul { margin: 5px 0 0 15px; }
 <div class="container">
     <div class="left">
         {% if project.performance_description %}
-        <div class="section-title">Technical Description</div>
+        <div class="section-title">{{ labels.technical_description }}</div>
         <p>{{ project.performance_description|linebreaks }}</p>
         {% endif %}
 
         {% if project.tech_value_text %}
-        <div class="section-title">Process Engineering</div>
+        <div class="section-title">{{ labels.process_engineering }}</div>
         <p>{{ project.tech_value_text|linebreaks }}</p>
         {% endif %}
     </div>
@@ -149,32 +159,35 @@ ul { margin: 5px 0 0 15px; }
     <div class="right">
         {% if project.total_fee %}
         <div class="side-block">
-            <div class="side-title">INVESTMENT</div>
+            <div class="side-title">{{ labels.investment }}</div>
             <div class="side-content">{{ project.total_fee }}</div>
         </div>
         {% endif %}
 
         {% if project.performance_short %}
         <div class="side-block">
-            <div class="side-title">BIOLOGICAL SYSTEM</div>
+            <div class="side-title">{{ labels.biological_system }}</div>
             <div class="side-content">{{ project.performance_short|linebreaks }}</div>
         </div>
         {% endif %}
 
         {% if project.partner_companies %}
         <div class="side-block">
-            <div class="side-title">MECHANICAL SYSTEM</div>
+            <div class="side-title">{{ labels.mechanical_system }}</div>
             <div class="side-content">{{ project.partner_companies|linebreaks }}</div>
         </div>
         {% endif %}
 
                 {% if images|length > 1 %}
-        <img class="small-img" src="data:image/jpeg;base64,{{ images.3.data }}" />
-        <img class="small-img" src="data:image/jpeg;base64,{{ images.4.data }}" />
-        <img class="small-img" src="data:image/jpeg;base64,{{ images.5.data }}" />
-        <img class="small-img" src="data:image/jpeg;base64,{{ images.6.data }}" />
+        {% if images|length > 3 %}<img class="small-img" src="data:{{ images.3.content_type }};base64,{{ images.3.data }}" />{% endif %}
+        {% if images|length > 4 %}<img class="small-img" src="data:{{ images.4.content_type }};base64,{{ images.4.data }}" />{% endif %}
+        {% if images|length > 5 %}<img class="small-img" src="data:{{ images.5.content_type }};base64,{{ images.5.data }}" />{% endif %}
+        {% if images|length > 6 %}<img class="small-img" src="data:{{ images.6.content_type }};base64,{{ images.6.data }}" />{% endif %}
         {% endif %}
     </div>
 </div>
+<script>
+    
+</script>
 </body>
 </html>

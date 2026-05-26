@@ -153,13 +153,19 @@
                 <div class="pd-gallery">
                     {% for image in project.images.all %}
                         <figure class="pd-photo">
-                            <img src="{% url 'serve_project_image' image.id %}" alt="Project image {{ forloop.counter }}">
+                            <img src="{% url 'serve_project_image' image.id %}" alt="Project image {{ forloop.counter }}" class="gallery-img" onclick="openLightbox(this)">
                             <figcaption>Image {{ forloop.counter }}</figcaption>
                         </figure>
                     {% endfor %}
                 </div>
             </section>
             {% endif %}
+
+            <!-- Lightbox Modal -->
+            <div id="lightboxModal" class="pd-lightbox-modal" onclick="closeLightboxOnBackdrop(event)">
+                <button class="pd-lightbox-close" onclick="closeLightbox()">×</button>
+                <img id="lightboxImage" src="" alt="Fullscreen image" class="pd-lightbox-img">
+            </div>
         </main>
 
         <aside class="pd-sidebar">
@@ -172,7 +178,7 @@
                 <a href="{% url 'delete_project_sheet' project.id %}" class="pd-btn" style="background-color: #dc3545; color: white;">🗑️ Delete Project</a>
                 {% endif %}
                 <a href="#" class="pd-btn pd-btn-disabled" aria-disabled="true">Export Word (soon)</a>
-                <a href="{% url 'view_project_pdf' project.id %}" class="pd-btn pd-btn-outline" aria-disabled="true">Export PDF (soon)</a>
+                <a href="{% url 'view_project_pdf' project.id %}" class="pd-btn pd-btn-disabled" aria-disabled="true">Export PDF (soon)</a>
                 <a href="{% url 'project_list' %}" class="pd-btn pd-btn-outline">Back to Projects</a>
             </section>
 
@@ -185,4 +191,34 @@
         </aside>
     </div>
 </div>
+
+<script>
+function openLightbox(imgElement) {
+    const modal = document.getElementById('lightboxModal');
+    const lightboxImage = document.getElementById('lightboxImage');
+    lightboxImage.src = imgElement.src;
+    modal.classList.add('active');
+    document.body.style.overflow = 'hidden';
+}
+
+function closeLightbox() {
+    const modal = document.getElementById('lightboxModal');
+    modal.classList.remove('active');
+    document.body.style.overflow = 'auto';
+}
+
+function closeLightboxOnBackdrop(event) {
+    if (event.target.id === 'lightboxModal') {
+        closeLightbox();
+    }
+}
+
+// Close lightbox with Escape key
+document.addEventListener('keydown', function(event) {
+    if (event.key === 'Escape') {
+        closeLightbox();
+    }
+});
+</script>
+
 {% endblock %}

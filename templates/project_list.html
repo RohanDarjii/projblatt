@@ -21,6 +21,14 @@
                 value="{{ search_project_number|default:'' }}"
             />
 
+             <!-- Search by Project Title -->
+            <input
+                type="text"
+                name="project_title"
+                placeholder="Search Project Title & keywords"
+                value="{{ search_project_title|default:'' }}"
+            />
+
             <!-- Country Filter -->
             <select name="country">
                 <option value="">All Countries</option>

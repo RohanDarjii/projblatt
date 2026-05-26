@@ -5,8 +5,9 @@ from .forms import ProjectSheetForm
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
 from .utils import PDFGenerator
+from django.db.models import Q
+from .countries import ALL_COUNTRIES
 
-# Create your views here.
 @login_required(login_url='home')
 def serve_project_image(request, image_id):
     img = ProjectImage.objects.get(id=image_id)
@@ -55,6 +56,7 @@ def project_list(request):
     country = request.GET.get("country")
     language = request.GET.get("language")
     project_number = request.GET.get("project_number")
+    project_title = request.GET.get("project_title")
 
     if country:
         projects = projects.filter(country__icontains=country)
@@ -65,20 +67,22 @@ def project_list(request):
     if project_number:
         projects = projects.filter(project_number__icontains=project_number)
 
-    countries = (
-        ProjectSheet.objects
-        .values_list("country", flat=True)
-        .distinct()
-        .order_by("country")
+    if project_title:
+        projects = projects.filter(
+            Q(project_title__icontains=project_title) |
+            Q(performance_description__icontains=project_title) |
+            Q(task_description__icontains=project_title) |
+            Q(performance_short__icontains=project_title)
     )
 
     context = {
         "projects": projects,
-        "countries": countries,
+        "countries": sorted(ALL_COUNTRIES),
         "languages": ProjectSheet.LANGUAGE_CHOICES,
         "selected_country": country,
         "selected_language": language,
         "search_project_number": project_number,
+        "search_project_title": project_title,
     }
 
     return render(request, "project_list.html", context)
