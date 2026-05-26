@@ -23,7 +23,6 @@ urlpatterns = [
     path('accounts/', include('allauth.urls')),
     # The Home Page (Dashboard)
     path('', include('projectsheets.urls')),
-    # The Chatbot API
-    path('chatbot/', include('chatbot.urls')),
+    
 ]
 
