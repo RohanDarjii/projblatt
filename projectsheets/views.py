@@ -1,9 +1,10 @@
 from django.shortcuts import render,redirect,get_object_or_404
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
 from .models import ProjectImage, ProjectSheet
 from .forms import ProjectSheetForm
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from .utils import PDFGenerator
 from django.db.models import Q
 from .countries import ALL_COUNTRIES
@@ -75,6 +76,19 @@ def project_list(request):
             Q(performance_short__icontains=project_title)
     )
 
+    # Pagination
+    paginator = Paginator(projects, 10)  # Show 10 projects per page
+    page = request.GET.get('page')
+    
+    try:
+        projects = paginator.page(page)
+    except PageNotAnInteger:
+        # If page is not an integer, deliver first page
+        projects = paginator.page(1)
+    except EmptyPage:
+        # If page is out of range, deliver last page
+        projects = paginator.page(paginator.num_pages)
+
     context = {
         "projects": projects,
         "countries": sorted(ALL_COUNTRIES),
@@ -86,6 +100,60 @@ def project_list(request):
     }
 
     return render(request, "project_list.html", context)
+
+
+@login_required(login_url='home')
+def search_projects_ajax(request):
+    """
+    AJAX endpoint for live search filtering.
+    Returns JSON with filtered project data.
+    No pagination - returns up to 100 results.
+    """
+    query = request.GET.get('q', '').strip()
+    country = request.GET.get('country', '').strip()
+    language = request.GET.get('language', '').strip()
+    
+    projects = ProjectSheet.objects.all().order_by("-created_at")
+    
+    # Apply country filter
+    if country:
+        projects = projects.filter(country__icontains=country)
+    
+    # Apply language filter
+    if language:
+        projects = projects.filter(language=language)
+    
+    # Apply search query to multiple fields
+    if query:
+        projects = projects.filter(
+            Q(project_number__icontains=query) |
+            Q(project_title__icontains=query) |
+            Q(performance_description__icontains=query) |
+            Q(task_description__icontains=query) |
+            Q(performance_short__icontains=query) |
+            Q(country__icontains=query) |
+            Q(location__icontains=query)
+        )
+    
+    # Limit results for performance
+    projects = projects[:100]
+    
+    # Convert to JSON-serializable format
+    results = []
+    for project in projects:
+        results.append({
+            'id': project.id,
+            'project_number': project.project_number,
+            'project_title': project.project_title,
+            'country': project.country,
+            'location': project.location,
+            'language': project.get_language_display(),
+            'date_from': project.date_from.strftime('%Y-%m-%d'),
+            'date_until': project.date_until.strftime('%Y-%m-%d') if project.date_until else '—',
+            'images_count': project.images.count(),
+        })
+    
+    return JsonResponse({'results': results, 'count': len(results)})
 
 
 @login_required(login_url='home')

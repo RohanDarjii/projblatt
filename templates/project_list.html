@@ -9,8 +9,21 @@
 
     <h2>Project Sheets</h2>
 
-    <!-- 🔍 FILTER FORM -->
-    <form method="get" class="filter-form">
+    <!-- 🔍 LIVE SEARCH INPUT -->
+    <div class="live-search-container">
+        <input
+            type="text"
+            id="live-search-input"
+            placeholder="🔍 Live Search: Project No., Title, Country, Location..."
+            class="live-search-input"
+            autocomplete="off"
+            data-search-url="{% url 'search_projects_ajax' %}"
+        />
+        <span id="search-results-count" class="search-results-count"></span>
+    </div>
+
+    <!-- 🔍 ADVANCED FILTER FORM -->
+    <form method="get" class="filter-form" id="filter-form">
         <div class="filter-row">
 
             <!-- Search by Project Number -->
@@ -19,6 +32,7 @@
                 name="project_number"
                 placeholder="Search Project Number"
                 value="{{ search_project_number|default:'' }}"
+                class="filter-input"
             />
 
              <!-- Search by Project Title -->
@@ -27,10 +41,11 @@
                 name="project_title"
                 placeholder="Search Project Title & keywords"
                 value="{{ search_project_title|default:'' }}"
+                class="filter-input"
             />
 
             <!-- Country Filter -->
-            <select name="country">
+            <select name="country" class="filter-select">
                 <option value="">All Countries</option>
                 {% for c in countries %}
                     <option value="{{ c }}" {% if c == selected_country %}selected{% endif %}>
@@ -40,7 +55,7 @@
             </select>
 
             <!-- Language Filter -->
-            <select name="language">
+            <select name="language" class="filter-select">
                 <option value="">All Languages</option>
                 {% for code, name in languages %}
                     <option value="{{ code }}" {% if code == selected_language %}selected{% endif %}>
@@ -68,7 +83,7 @@
                 <th>Images</th>
             </tr>
         </thead>
-        <tbody>
+        <tbody id="projects-tbody">
             {% for project in projects %}
                 <tr
                     title="View project details"
@@ -85,12 +100,210 @@
                     <td>{{ project.images.count }}</td>
                 </tr>
             {% empty %}
-                <tr class="empty-row">
+                <tr class="empty-row" id="empty-row">
                     <td colspan="8">No projects found</td>
                 </tr>
             {% endfor %}
         </tbody>
     </table>
 
+    <!-- 📄 PAGINATION (hidden during live search) -->
+    <div id="pagination-container">
+        {% if projects.has_other_pages %}
+        <div class="pagination">
+            <nav aria-label="Page navigation">
+                <ul class="pagination-list">
+                    <!-- Previous Page -->
+                    {% if projects.has_previous %}
+                        <li class="pagination-item">
+                            <a href="?page=1{% if selected_country %}&country={{ selected_country }}{% endif %}{% if selected_language %}&language={{ selected_language }}{% endif %}{% if search_project_number %}&project_number={{ search_project_number }}{% endif %}{% if search_project_title %}&project_title={{ search_project_title }}{% endif %}" 
+                               class="pagination-link" title="First page">« First</a>
+                        </li>
+                        <li class="pagination-item">
+                            <a href="?page={{ projects.previous_page_number }}{% if selected_country %}&country={{ selected_country }}{% endif %}{% if selected_language %}&language={{ selected_language }}{% endif %}{% if search_project_number %}&project_number={{ search_project_number }}{% endif %}{% if search_project_title %}&project_title={{ search_project_title }}{% endif %}" 
+                               class="pagination-link" title="Previous page">‹ Previous</a>
+                        </li>
+                    {% endif %}
+
+                    <!-- Page Numbers -->
+                    {% for num in projects.paginator.page_range %}
+                        {% if projects.number == num %}
+                            <li class="pagination-item active">
+                                <span class="pagination-link current">{{ num }}</span>
+                            </li>
+                        {% elif num > projects.number|add:'-3' and num < projects.number|add:'3' %}
+                            <li class="pagination-item">
+                                <a href="?page={{ num }}{% if selected_country %}&country={{ selected_country }}{% endif %}{% if selected_language %}&language={{ selected_language }}{% endif %}{% if search_project_number %}&project_number={{ search_project_number }}{% endif %}{% if search_project_title %}&project_title={{ search_project_title }}{% endif %}" 
+                                   class="pagination-link">{{ num }}</a>
+                            </li>
+                        {% endif %}
+                    {% endfor %}
+
+                    <!-- Next Page -->
+                    {% if projects.has_next %}
+                        <li class="pagination-item">
+                            <a href="?page={{ projects.next_page_number }}{% if selected_country %}&country={{ selected_country }}{% endif %}{% if selected_language %}&language={{ selected_language }}{% endif %}{% if search_project_number %}&project_number={{ search_project_number }}{% endif %}{% if search_project_title %}&project_title={{ search_project_title }}{% endif %}" 
+                               class="pagination-link" title="Next page">Next ›</a>
+                        </li>
+                        <li class="pagination-item">
+                            <a href="?page={{ projects.paginator.num_pages }}{% if selected_country %}&country={{ selected_country }}{% endif %}{% if selected_language %}&language={{ selected_language }}{% endif %}{% if search_project_number %}&project_number={{ search_project_number }}{% endif %}{% if search_project_title %}&project_title={{ search_project_title }}{% endif %}" 
+                               class="pagination-link" title="Last page">Last »</a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </nav>
+            <p class="pagination-info">
+                Page {{ projects.number }} of {{ projects.paginator.num_pages }}
+                (Total: {{ projects.paginator.count }} projects)
+            </p>
+        </div>
+        {% endif %}
+    </div>
+
 </div>
+
+<script>
+// Live Search with AJAX
+document.addEventListener('DOMContentLoaded', function() {
+    const searchInput = document.getElementById('live-search-input');
+    const projectsTbody = document.getElementById('projects-tbody');
+    const paginationContainer = document.getElementById('pagination-container');
+    const resultsCountSpan = document.getElementById('search-results-count');
+    const searchUrl = searchInput.getAttribute('data-search-url');
+    let searchTimeout;
+
+    searchInput.addEventListener('input', function() {
+        clearTimeout(searchTimeout);
+        const query = this.value.trim();
+
+        // Hide pagination during live search
+        paginationContainer.style.display = 'none';
+        resultsCountSpan.textContent = '';
+
+        // If query is empty, reload the page to show normal view
+        if (!query) {
+            location.reload();
+            return;
+        }
+
+        // Debounce the search to avoid too many requests
+        searchTimeout = setTimeout(function() {
+            performLiveSearch(query);
+        }, 300); // 300ms debounce
+    });
+
+    function performLiveSearch(query) {
+        const url = new URL(searchUrl, window.location.origin);
+        url.searchParams.append('q', query);
+
+        fetch(url)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                updateTable(data.results, query);
+                updateResultsCount(data.count);
+            })
+            .catch(error => {
+                console.error('Search error:', error);
+                projectsTbody.innerHTML = '<tr class="empty-row"><td colspan="8">Error performing search: ' + error.message + '</td></tr>';
+            });
+    }
+
+    function updateTable(results, query) {
+        if (results.length === 0) {
+            projectsTbody.innerHTML = '<tr class="empty-row"><td colspan="8">No projects match your search</td></tr>';
+            return;
+        }
+
+        const rows = results.map(project => `
+            <tr
+                title="View project details"
+                onclick="window.location.href='{% url 'project_detail' 0 %}'.replace('0', ${project.id})"
+                style="cursor: pointer;"
+            >
+                <td>${escapeHtml(project.project_number)}</td>
+                <td>${highlightMatch(project.project_title, query)}</td>
+                <td>${escapeHtml(project.country)}</td>
+                <td>${escapeHtml(project.location)}</td>
+                <td>${escapeHtml(project.language)}</td>
+                <td>${project.date_from}</td>
+                <td>${project.date_until}</td>
+                <td>${project.images_count}</td>
+            </tr>
+        `).join('');
+
+        projectsTbody.innerHTML = rows;
+    }
+
+    function updateResultsCount(count) {
+        const countText = count === 1 ? '1 result' : `${count} results`;
+        resultsCountSpan.textContent = `• ${countText} found`;
+    }
+
+    function highlightMatch(text, query) {
+        const regex = new RegExp(`(${query})`, 'gi');
+        return escapeHtml(text).replace(regex, '<mark>$1</mark>');
+    }
+
+    function escapeHtml(unsafe) {
+        return unsafe
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;");
+    }
+});
+</script>
+
+<style>
+/* Live Search Styles */
+.live-search-container {
+    margin: 20px 0 30px 0;
+    position: relative;
+}
+
+.live-search-input {
+    width: 100%;
+    padding: 12px 16px;
+    font-size: 16px;
+    border: 2px solid #ddd;
+    border-radius: 6px;
+    transition: all 0.3s ease;
+    box-sizing: border-box;
+}
+
+.live-search-input:focus {
+    outline: none;
+    border-color: #007bff;
+    box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.25);
+}
+
+.search-results-count {
+    position: absolute;
+    right: 16px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 14px;
+    color: #666;
+    pointer-events: none;
+}
+
+/* Highlight matched text */
+mark {
+    background-color: #fff3cd;
+    padding: 2px 4px;
+    border-radius: 2px;
+}
+
+/* Ensure pagination hides when searching */
+#pagination-container.hidden {
+    display: none;
+}
+</style>
+
 {% endblock %}
