@@ -9,7 +9,7 @@
 
     <h2>Project Sheets</h2>
 
-    <!-- 🔍 LIVE SEARCH INPUT -->
+    <!-- 🔍 LIVE SEARCH INPUT (full width) -->
     <div class="live-search-container">
         <input
             type="text"
@@ -25,24 +25,6 @@
     <!-- 🔍 ADVANCED FILTER FORM -->
     <form method="get" class="filter-form" id="filter-form">
         <div class="filter-row">
-
-            <!-- Search by Project Number -->
-            <input
-                type="text"
-                name="project_number"
-                placeholder="Search Project Number"
-                value="{{ search_project_number|default:'' }}"
-                class="filter-input"
-            />
-
-             <!-- Search by Project Title -->
-            <input
-                type="text"
-                name="project_title"
-                placeholder="Search Project Title & keywords"
-                value="{{ search_project_title|default:'' }}"
-                class="filter-input"
-            />
 
             <!-- Country Filter -->
             <select name="country" class="filter-select">
@@ -107,10 +89,11 @@
         </tbody>
     </table>
 
-    <!-- 📄 PAGINATION (hidden during live search) -->
+    <!-- 📄 PAGINATION (shown for both normal and live search) -->
     <div id="pagination-container">
-        {% if projects.has_other_pages %}
-        <div class="pagination">
+        <!-- Static pagination for normal page load -->
+        <div class="pagination" id="static-pagination-content">
+            {% if projects.has_other_pages %}
             <nav aria-label="Page navigation">
                 <ul class="pagination-list">
                     <!-- Previous Page -->
@@ -156,29 +139,42 @@
                 Page {{ projects.number }} of {{ projects.paginator.num_pages }}
                 (Total: {{ projects.paginator.count }} projects)
             </p>
+            {% endif %}
         </div>
-        {% endif %}
+
+        <!-- Dynamic pagination for live search (hidden initially) -->
+        <div class="pagination" id="dynamic-pagination-content" style="display:none;">
+            <nav aria-label="Page navigation">
+                <ul class="pagination-list" id="pagination-list">
+                    <!-- Pagination links will be populated here by JavaScript -->
+                </ul>
+            </nav>
+            <p class="pagination-info" id="pagination-info">
+                <!-- Pagination info will be populated here -->
+            </p>
+        </div>
     </div>
 
 </div>
 
 <script>
-// Live Search with AJAX
+// Live Search with AJAX and Pagination
 document.addEventListener('DOMContentLoaded', function() {
     const searchInput = document.getElementById('live-search-input');
     const projectsTbody = document.getElementById('projects-tbody');
-    const paginationContainer = document.getElementById('pagination-container');
+    const staticPaginationContent = document.getElementById('static-pagination-content');
+    const dynamicPaginationContent = document.getElementById('dynamic-pagination-content');
+    const paginationList = document.getElementById('pagination-list');
+    const paginationInfo = document.getElementById('pagination-info');
     const resultsCountSpan = document.getElementById('search-results-count');
     const searchUrl = searchInput.getAttribute('data-search-url');
     let searchTimeout;
+    let currentSearchQuery = '';
 
     searchInput.addEventListener('input', function() {
         clearTimeout(searchTimeout);
         const query = this.value.trim();
-
-        // Hide pagination during live search
-        paginationContainer.style.display = 'none';
-        resultsCountSpan.textContent = '';
+        currentSearchQuery = query;
 
         // If query is empty, reload the page to show normal view
         if (!query) {
@@ -186,15 +182,22 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
 
+        resultsCountSpan.textContent = '';
+        
+        // Hide static pagination, show dynamic pagination
+        staticPaginationContent.style.display = 'none';
+        dynamicPaginationContent.style.display = 'block';
+
         // Debounce the search to avoid too many requests
         searchTimeout = setTimeout(function() {
-            performLiveSearch(query);
+            performLiveSearch(query, 1);
         }, 300); // 300ms debounce
     });
 
-    function performLiveSearch(query) {
+    function performLiveSearch(query, page = 1) {
         const url = new URL(searchUrl, window.location.origin);
         url.searchParams.append('q', query);
+        url.searchParams.append('page', page);
 
         fetch(url)
             .then(response => {
@@ -205,11 +208,14 @@ document.addEventListener('DOMContentLoaded', function() {
             })
             .then(data => {
                 updateTable(data.results, query);
+                updatePagination(data, query);
                 updateResultsCount(data.count);
             })
             .catch(error => {
                 console.error('Search error:', error);
                 projectsTbody.innerHTML = '<tr class="empty-row"><td colspan="8">Error performing search: ' + error.message + '</td></tr>';
+                paginationList.innerHTML = '';
+                paginationInfo.textContent = '';
             });
     }
 
@@ -237,6 +243,71 @@ document.addEventListener('DOMContentLoaded', function() {
         `).join('');
 
         projectsTbody.innerHTML = rows;
+    }
+
+    function updatePagination(data, query) {
+        const currentPage = data.page;
+        const totalPages = data.total_pages;
+        const paginationHtml = [];
+
+        // First page link
+        if (data.has_previous) {
+            paginationHtml.push(`
+                <li class="pagination-item">
+                    <a href="#" class="pagination-link pagination-page" data-query="${escapeHtml(query)}" data-page="1" title="First page">« First</a>
+                </li>
+            `);
+            paginationHtml.push(`
+                <li class="pagination-item">
+                    <a href="#" class="pagination-link pagination-page" data-query="${escapeHtml(query)}" data-page="${data.previous_page}" title="Previous page">‹ Previous</a>
+                </li>
+            `);
+        }
+
+        // Page numbers
+        for (let i = 1; i <= totalPages; i++) {
+            if (i === currentPage) {
+                paginationHtml.push(`
+                    <li class="pagination-item active">
+                        <span class="pagination-link current">${i}</span>
+                    </li>
+                `);
+            } else if (i > currentPage - 3 && i < currentPage + 3) {
+                paginationHtml.push(`
+                    <li class="pagination-item">
+                        <a href="#" class="pagination-link pagination-page" data-query="${escapeHtml(query)}" data-page="${i}">${i}</a>
+                    </li>
+                `);
+            }
+        }
+
+        // Next page link
+        if (data.has_next) {
+            paginationHtml.push(`
+                <li class="pagination-item">
+                    <a href="#" class="pagination-link pagination-page" data-query="${escapeHtml(query)}" data-page="${data.next_page}" title="Next page">Next ›</a>
+                </li>
+            `);
+            paginationHtml.push(`
+                <li class="pagination-item">
+                    <a href="#" class="pagination-link pagination-page" data-query="${escapeHtml(query)}" data-page="${totalPages}" title="Last page">Last »</a>
+                </li>
+            `);
+        }
+
+        paginationList.innerHTML = paginationHtml.join('');
+        paginationInfo.textContent = `Page ${currentPage} of ${totalPages} (Total: ${data.count} projects)`;
+
+        // Add event listeners to pagination links
+        document.querySelectorAll('.pagination-page').forEach(link => {
+            link.addEventListener('click', function(e) {
+                e.preventDefault();
+                const page = this.getAttribute('data-page');
+                const query = this.getAttribute('data-query');
+                performLiveSearch(query, page);
+                window.scrollTo(0, 0); // Scroll to top
+            });
+        });
     }
 
     function updateResultsCount(count) {
@@ -269,7 +340,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
 .live-search-input {
     width: 100%;
-    padding: 12px 16px;
+    padding: 18px 16px;
     font-size: 16px;
     border: 2px solid #ddd;
     border-radius: 6px;

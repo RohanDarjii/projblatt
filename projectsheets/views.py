@@ -105,13 +105,13 @@ def project_list(request):
 @login_required(login_url='home')
 def search_projects_ajax(request):
     """
-    AJAX endpoint for live search filtering.
-    Returns JSON with filtered project data.
-    No pagination - returns up to 100 results.
+    AJAX endpoint for live search filtering with pagination.
+    Returns JSON with filtered project data and pagination info.
     """
     query = request.GET.get('q', '').strip()
     country = request.GET.get('country', '').strip()
     language = request.GET.get('language', '').strip()
+    page = request.GET.get('page', 1)
     
     projects = ProjectSheet.objects.all().order_by("-created_at")
     
@@ -135,12 +135,19 @@ def search_projects_ajax(request):
             Q(location__icontains=query)
         )
     
-    # Limit results for performance
-    projects = projects[:100]
+    # Pagination
+    paginator = Paginator(projects, 10)  # Show 10 projects per page
+    
+    try:
+        projects_page = paginator.page(page)
+    except PageNotAnInteger:
+        projects_page = paginator.page(1)
+    except EmptyPage:
+        projects_page = paginator.page(paginator.num_pages)
     
     # Convert to JSON-serializable format
     results = []
-    for project in projects:
+    for project in projects_page:
         results.append({
             'id': project.id,
             'project_number': project.project_number,
@@ -153,7 +160,16 @@ def search_projects_ajax(request):
             'images_count': project.images.count(),
         })
     
-    return JsonResponse({'results': results, 'count': len(results)})
+    return JsonResponse({
+        'results': results,
+        'count': paginator.count,
+        'page': projects_page.number,
+        'total_pages': paginator.num_pages,
+        'has_previous': projects_page.has_previous(),
+        'has_next': projects_page.has_next(),
+        'previous_page': projects_page.previous_page_number() if projects_page.has_previous() else None,
+        'next_page': projects_page.next_page_number() if projects_page.has_next() else None,
+    })
 
 
 @login_required(login_url='home')
