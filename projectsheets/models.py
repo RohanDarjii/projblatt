@@ -2,6 +2,7 @@ import os
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 from django.utils.text import slugify
+from django.contrib.auth.models import User
 
 # Create your models here.
 class ProjectSheet(models.Model):
@@ -50,6 +51,9 @@ class ProjectSheet(models.Model):
     
     captions = models.TextField("Photo Captions", blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
+    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name="projects_created")
+    updated_at = models.DateTimeField(auto_now=True)
+    updated_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name="projects_updated")
 
     def __str__(self):
         return f"{self.project_number} - {self.project_title} - {self.country} - {self.language}"

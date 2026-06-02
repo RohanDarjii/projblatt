@@ -1,12 +1,454 @@
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard</title>
-</head>
-<body>
-    <h1>Dashboard</h1>
-    <p>Welcome to your dashboard!</p>
-    <p>Total Projects: {{ total_projects }}</p>
-</body>
-</html>
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Dashboard - Project Manager{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<link rel="stylesheet" href="{% static 'dashboard.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-container">
+    <!-- Header -->
+    <div class="dashboard-header">
+        <div class="header-content">
+            <h1 class="dashboard-title">Project Dashboard</h1>
+            <p class="dashboard-subtitle">Real-time project metrics and analytics</p>
+        </div>
+        <div class="header-actions">
+            <div class="refresh-indicator">
+                <span class="status-dot"></span>
+                <small>Last updated: Now</small>
+            </div>
+        </div>
+    </div>
+
+    <!-- KPI Cards Section -->
+    <div class="kpi-section">
+        <h2 class="section-title">Key Performance Indicators</h2>
+        <div class="kpi-grid">
+            <!-- Total Projects -->
+            <div class="kpi-card kpi-card-primary">
+                <div class="kpi-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                        <polyline points="9 22 9 12 15 12 15 22"></polyline>
+                    </svg>
+                </div>
+                <div class="kpi-content">
+                    <h3 class="kpi-label">Total Projects</h3>
+                    <p class="kpi-value">{{ total_projects }}</p>
+                </div>
+            </div>
+
+            <!-- Total Countries -->
+            <div class="kpi-card kpi-card-secondary">
+                <div class="kpi-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+                        <path d="M2 12h20"></path>
+                    </svg>
+                </div>
+                <div class="kpi-content">
+                    <h3 class="kpi-label">Countries</h3>
+                    <p class="kpi-value">{{ total_countries }}</p>
+                </div>
+            </div>
+
+            <!-- Total Images -->
+            <div class="kpi-card kpi-card-accent">
+                <div class="kpi-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                        <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                        <polyline points="21 15 16 10 5 21"></polyline>
+                    </svg>
+                </div>
+                <div class="kpi-content">
+                    <h3 class="kpi-label">Total Images</h3>
+                    <p class="kpi-value">{{ total_images }}</p>
+                </div>
+            </div>
+
+            <!-- Languages -->
+            <div class="kpi-card kpi-card-info">
+                <div class="kpi-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M5 8h14M5 8a2 2 0 1 0 4 0M5 8a2 2 0 1 1 4 0m7 0h.01M12 20a8 8 0 1 0 0-16 8 8 0 0 0 0 16z"></path>
+                    </svg>
+                </div>
+                <div class="kpi-content">
+                    <h3 class="kpi-label">Languages</h3>
+                    <p class="kpi-value">{{ languages_available }}</p>
+                </div>
+            </div>
+
+            <!-- Avg Images per Project -->
+            <div class="kpi-card kpi-card-success">
+                <div class="kpi-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"></path>
+                        <path d="M12 6v6l4 2"></path>
+                    </svg>
+                </div>
+                <div class="kpi-content">
+                    <h3 class="kpi-label">Avg Images/Project</h3>
+                    <p class="kpi-value">{{ avg_images_per_project }}</p>
+                </div>
+            </div>
+
+            <!-- Missing Images -->
+            <div class="kpi-card kpi-card-warning">
+                <div class="kpi-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 2L2 20h20L12 2z"></path>
+                        <path d="M12 9v4M12 17h.01"></path>
+                    </svg>
+                </div>
+                <div class="kpi-content">
+                    <h3 class="kpi-label">Missing Images</h3>
+                    <p class="kpi-value">{{ projects_missing_images }}</p>
+                </div>
+            </div>
+
+            <!-- Missing Descriptions -->
+            <div class="kpi-card kpi-card-danger">
+                <div class="kpi-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                    </svg>
+                </div>
+                <div class="kpi-content">
+                    <h3 class="kpi-label">Missing Descriptions</h3>
+                    <p class="kpi-value">{{ projects_missing_descriptions }}</p>
+                </div>
+            </div>
+
+            <!-- Data Quality Score -->
+            <div class="kpi-card kpi-card-quality">
+                <div class="kpi-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="12 3 20 7.5 20 16.5 12 21 4 16.5 4 7.5 12 3"></polyline>
+                        <line x1="12" y1="12" x2="20" y2="7.5"></line>
+                        <line x1="12" y1="12" x2="12" y2="21"></line>
+                        <line x1="12" y1="12" x2="4" y2="7.5"></line>
+                    </svg>
+                </div>
+                <div class="kpi-content">
+                    <h3 class="kpi-label">Quality Score</h3>
+                    <div class="quality-score-display">
+                        <p class="kpi-value">{{ data_quality_score }}%</p>
+                        <div class="quality-bar">
+                            <div class="quality-fill" style="width: {{ data_quality_score }}%"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts Section -->
+    <div class="charts-section">
+        <h2 class="section-title">Analytics & Insights</h2>
+
+        <div class="charts-grid">
+            <!-- Projects by Country (Bar Chart) -->
+            <div class="chart-card">
+                <div class="chart-header">
+                    <h3 class="chart-title">Projects by Country (Top 10)</h3>
+                </div>
+                <div class="chart-container">
+                    <canvas id="projectsByCountryChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Language Distribution (Pie Chart) -->
+            <div class="chart-card">
+                <div class="chart-header">
+                    <h3 class="chart-title">Language Distribution</h3>
+                </div>
+                <div class="chart-container">
+                    <canvas id="languageDistributionChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Projects by Year (Line Chart) -->
+            <div class="chart-card chart-card-full">
+                <div class="chart-header">
+                    <h3 class="chart-title">Projects by Year</h3>
+                </div>
+                <div class="chart-container">
+                    <canvas id="projectsByYearChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Revenue by Year (Bar Chart) -->
+            <div class="chart-card chart-card-full">
+                <div class="chart-header">
+                    <h3 class="chart-title">Revenue by Year (EUR €)</h3>
+                </div>
+                <div class="chart-container">
+                    <canvas id="revenueByYearChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Top 10 Countries -->
+            <div class="chart-card">
+                <div class="chart-header">
+                    <h3 class="chart-title">Top 10 Countries</h3>
+                </div>
+                <div class="chart-container">
+                    <canvas id="topCountriesChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Top 10 Clients -->
+            <div class="chart-card">
+                <div class="chart-header">
+                    <h3 class="chart-title">Top 10 Clients</h3>
+                </div>
+                <div class="chart-container">
+                    <canvas id="topClientsChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Projects Created Per Month -->
+            <div class="chart-card chart-card-full">
+                <div class="chart-header">
+                    <h3 class="chart-title">Projects Created per Month (Last 12 Months)</h3>
+                </div>
+                <div class="chart-container">
+                    <canvas id="projectsPerMonthChart"></canvas>
+                </div>
+            </div>
+
+            <!-- World Map -->
+            <div class="chart-card chart-card-full">
+                <div class="chart-header">
+                    <h3 class="chart-title">Global Project Distribution</h3>
+                </div>
+                <div class="map-container" id="worldMap"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Data Tables Section -->
+    <div class="tables-section">
+        <div class="tables-grid">
+            <!-- Latest Projects -->
+            <div class="table-card">
+                <div class="table-header">
+                    <h3 class="table-title">Latest Projects (Top 10)</h3>
+                    <a href="{% url 'project_list' %}" class="view-all-link">View All →</a>
+                </div>
+                <div class="table-wrapper">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Project Number</th>
+                                <th>Title</th>
+                                <th>Country</th>
+                                <th>Language</th>
+                                <th>Images</th>
+                                <th>Created</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for project in latest_projects %}
+                            <tr class="table-row-link" onclick="window.location='{% url 'project_detail' project.pk %}'">
+                                <td><strong>{{ project.project_number }}</strong></td>
+                                <td>{{ project.project_title|truncatewords:5 }}</td>
+                                <td>{{ project.country }}</td>
+                                <td>
+                                    <span class="badge badge-language">
+                                        {{ project.get_language_display }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <span class="badge badge-info">{{ project.image_count }}</span>
+                                </td>
+                                <td class="date-cell">{{ project.created_at|date:"M d, Y" }}</td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="6" class="empty-state">No projects yet</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Data Quality Panel -->
+            <div class="table-card">
+                <div class="table-header">
+                    <h3 class="table-title">Data Quality Issues</h3>
+                </div>
+                <div class="quality-panel">
+                    <!-- Missing Images -->
+                    <div class="quality-section">
+                        <h4 class="quality-subtitle">
+                            <span class="quality-icon warning">⚠</span>
+                            Missing Images ({{ projects_missing_images }})
+                        </h4>
+                        <ul class="quality-list">
+                            {% for project_number, project_title, country in projects_missing_images_list %}
+                            <li>
+                                <span class="quality-item-text">{{ project_number }}: {{ project_title|truncatewords:3 }}</span>
+                                <span class="quality-item-meta">{{ country }}</span>
+                            </li>
+                            {% empty %}
+                            <li class="quality-list-empty">All projects have images ✓</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+
+                    <!-- Missing Descriptions -->
+                    <div class="quality-section">
+                        <h4 class="quality-subtitle">
+                            <span class="quality-icon danger">✗</span>
+                            Missing Descriptions ({{ projects_missing_descriptions }})
+                        </h4>
+                        <ul class="quality-list">
+                            {% for project_number, project_title in projects_missing_descriptions_list %}
+                            <li>
+                                <span class="quality-item-text">{{ project_number }}: {{ project_title|truncatewords:3 }}</span>
+                            </li>
+                            {% empty %}
+                            <li class="quality-list-empty">All projects have descriptions ✓</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+
+                    <!-- Missing Client Info -->
+                    <div class="quality-section">
+                        <h4 class="quality-subtitle">
+                            <span class="quality-icon warning">⚠</span>
+                            Missing Client Info ({{ projects_missing_client_info|length }})
+                        </h4>
+                        <ul class="quality-list">
+                            {% for project_number, project_title in projects_missing_client_info %}
+                            <li>
+                                <span class="quality-item-text">{{ project_number }}: {{ project_title|truncatewords:3 }}</span>
+                            </li>
+                            {% empty %}
+                            <li class="quality-list-empty">All projects have client info ✓</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Activity Feed -->
+        <div class="table-card">
+            <div class="table-header">
+                <h3 class="table-title">Recent Activity</h3>
+            </div>
+            <div class="activity-feed">
+                {% for project in recent_activity %}
+                <div class="activity-item">
+                    <div class="activity-icon">
+                        <span class="activity-dot"></span>
+                    </div>
+                    <div class="activity-content">
+                        <p class="activity-title">
+                            <strong>{{ project.project_number }}</strong> - {{ project.project_title|truncatewords:5 }}
+                        </p>
+                        <p class="activity-meta">
+                            {% if project.updated_by and project.updated_at != project.created_at %}
+                                <span class="activity-action">Edited</span> by <strong>{{ project.updated_by.get_full_name|default:project.updated_by.username }}</strong>
+                                <span class="activity-time">• {{ project.updated_at|timesince }} ago</span>
+                            {% elif project.created_by %}
+                                <span class="activity-action">Created</span> by <strong>{{ project.created_by.get_full_name|default:project.created_by.username }}</strong>
+                                <span class="activity-time">• {{ project.created_at|timesince }} ago</span>
+                            {% else %}
+                                Created in {{ project.country }} 
+                                <span class="activity-time">• {{ project.created_at|timesince }} ago</span>
+                            {% endif %}
+                        </p>
+                    </div>
+                </div>
+                {% empty %}
+                <div class="empty-state">No recent activity</div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Action Cards -->
+    <div class="actions-section">
+        <h2 class="section-title">Quick Actions</h2>
+        <div class="actions-grid">
+            <a href="{% url 'create_project_sheet' %}" class="action-card action-create">
+                <div class="action-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 5v14M5 12h14"></path>
+                    </svg>
+                </div>
+                <h3 class="action-title">Create New Project</h3>
+                <p class="action-description">Add a new project to the database</p>
+            </a>
+
+            <a href="{% url 'project_list' %}" class="action-card action-view">
+                <div class="action-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                        <polyline points="9 22 9 12 15 12 15 22"></polyline>
+                    </svg>
+                </div>
+                <h3 class="action-title">View All Projects</h3>
+                <p class="action-description">Browse and search all projects</p>
+            </a>
+
+            <div class="action-card action-stats">
+                <div class="action-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="20" x2="18" y2="10"></line>
+                        <line x1="12" y1="20" x2="12" y2="4"></line>
+                        <line x1="6" y1="20" x2="6" y2="14"></line>
+                    </svg>
+                </div>
+                <h3 class="action-title">Data Quality</h3>
+                <p class="action-description">{{ data_quality_score }}% - Database quality score</p>
+            </div>
+
+            <div class="action-card action-info">
+                <div class="action-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <path d="M12 16v-4M12 8h.01"></path>
+                    </svg>
+                </div>
+                <h3 class="action-title">Export Report</h3>
+                <p class="action-description">Generate comprehensive project report</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Chart Data Storage -->
+<script id="chart-data" type="application/json">
+{
+    "projectsByCountry": {{ chart_data.projectsByCountry|safe }},
+    "languageDistribution": {{ chart_data.languageDistribution|safe }},
+    "languageNames": {{ chart_data.languageNames|safe }},
+    "projectsByYear": {{ chart_data.projectsByYear|safe }},
+    "revenueByYear": {{ chart_data.revenueByYear|safe }},
+    "topCountries": {{ chart_data.topCountries|safe }},
+    "topClients": {{ chart_data.topClients|safe }},
+    "projectsPerMonth": {{ chart_data.projectsPerMonth|safe }},
+    "countryData": {{ chart_data.countryData|safe }}
+}
+</script>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script src="{% static 'dashboard-charts.js' %}"></script>
+{% endblock %}

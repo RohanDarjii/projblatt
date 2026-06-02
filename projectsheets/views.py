@@ -10,8 +10,10 @@ from .utils import PDFGenerator
 from django.db.models import Q, Count, Case, When, IntegerField, F, DecimalField, Sum, Avg
 from django.db.models.functions import ExtractYear, TruncMonth
 from django.utils import timezone
+from django.core.serializers.json import DjangoJSONEncoder
 from datetime import timedelta
 from collections import defaultdict
+import json
 from .countries import ALL_COUNTRIES
 
 @login_required(login_url='home')
@@ -34,7 +36,11 @@ def create_project_sheet(request):
 
         if form.is_valid():
             # 2. Save the Project Data (Title, Number, etc.) first
-            project = form.save()
+            project = form.save(commit=False)
+            # Capture who created this project
+            if request.user.is_authenticated:
+                project.created_by = request.user
+            project.save()
             print(f"DEBUG: Project '{project.project_title}' saved with ID: {project.id}")
             # 3. Save the Photos
             # We loop through the list of files caught by the form widget
@@ -233,7 +239,11 @@ def edit_project_sheet(request, pk):
         form = ProjectSheetForm(request.POST, request.FILES, instance=project)
         
         if form.is_valid():
-            project = form.save()
+            project = form.save(commit=False)
+            # Capture who last updated this project
+            if request.user.is_authenticated:
+                project.updated_by = request.user
+            project.save()
             
             # Handle new image uploads
             files = request.FILES.getlist('photos')
@@ -351,6 +361,56 @@ def dashboard(request):
     )
     projects_by_year_list = list(projects_by_year)
     
+    # ===== REVENUE BY YEAR (in Euros) =====
+    # Parse fee_kocks field and group by year
+    all_projects_with_year = ProjectSheet.objects.annotate(
+        year=ExtractYear('date_from')
+    ).values('year', 'fee_kocks').order_by('year')
+    
+    revenue_by_year_dict = defaultdict(float)
+    for project in all_projects_with_year:
+        if project['year'] and project['fee_kocks']:
+            # Parse the fee_kocks value (e.g., "130k EUR", "90000", "€ 125,000")
+            fee_str = str(project['fee_kocks']).strip().upper()
+            
+            # Remove currency labels
+            fee_str = fee_str.replace('EUR', '').replace('€', '').replace('$', '').strip()
+            
+            # Handle 'k' suffix (thousands)
+            has_k_suffix = 'K' in fee_str
+            if has_k_suffix:
+                fee_str = fee_str.replace('K', '').strip()
+            
+            # Handle both comma and dot as decimal separator
+            if ',' in fee_str and '.' in fee_str:
+                # Has both - assume dot is decimal, comma is thousands
+                fee_str = fee_str.replace(',', '')
+            elif ',' in fee_str:
+                # Has only comma - check position to determine if thousands or decimal
+                last_comma_pos = fee_str.rfind(',')
+                if len(fee_str) - last_comma_pos <= 3:
+                    # Comma is thousands separator
+                    fee_str = fee_str.replace(',', '')
+                else:
+                    # Comma is decimal separator
+                    fee_str = fee_str.replace(',', '.')
+            
+            try:
+                revenue = float(fee_str)
+                # If had 'k' suffix, multiply by 1000
+                if has_k_suffix:
+                    revenue *= 1000
+                revenue_by_year_dict[project['year']] += revenue
+            except (ValueError, TypeError):
+                # Skip if can't parse as number
+                pass
+    
+    # Convert to sorted list format for chart
+    revenue_by_year_list = [
+        {'year': year, 'revenue': round(revenue, 2)} 
+        for year, revenue in sorted(revenue_by_year_dict.items())
+    ]
+    
     # ===== LATEST PROJECTS TABLE (Top 10) =====
     latest_projects = (
         ProjectSheet.objects.annotate(
@@ -415,7 +475,13 @@ def dashboard(request):
         .annotate(count=Count('id'))
         .order_by('month')
     )
-    projects_per_month_list = list(projects_per_month)
+    # Convert datetime objects to strings for JSON serialization
+    projects_per_month_list = []
+    for item in projects_per_month:
+        projects_per_month_list.append({
+            'month': item['month'].strftime('%Y-%m-%d') if item['month'] else None,
+            'count': item['count']
+        })
     
     # ===== PROJECTS BY LANGUAGE DETAILED =====
     projects_by_language = (
@@ -435,6 +501,20 @@ def dashboard(request):
         country_name = country['country']
         country_data[country_name] = country['count']
     
+    # ===== JSON SERIALIZATION FOR CHARTS =====
+    # Convert all chart data to JSON strings for safe template rendering
+    chart_data_json = {
+        'projectsByCountry': json.dumps(projects_by_country_list, cls=DjangoJSONEncoder),
+        'languageDistribution': json.dumps(language_dist_list, cls=DjangoJSONEncoder),
+        'languageNames': json.dumps(language_names, cls=DjangoJSONEncoder),
+        'projectsByYear': json.dumps(projects_by_year_list, cls=DjangoJSONEncoder),
+        'revenueByYear': json.dumps(revenue_by_year_list, cls=DjangoJSONEncoder),
+        'topCountries': json.dumps(top_countries_list, cls=DjangoJSONEncoder),
+        'topClients': json.dumps(top_clients_list, cls=DjangoJSONEncoder),
+        'projectsPerMonth': json.dumps(projects_per_month_list, cls=DjangoJSONEncoder),
+        'countryData': json.dumps(country_data, cls=DjangoJSONEncoder),
+    }
+    
     context = {
         # KPI Cards
         "total_projects": total_projects,
@@ -446,7 +526,10 @@ def dashboard(request):
         "avg_images_per_project": avg_images_per_project,
         "data_quality_score": data_quality_score,
         
-        # Chart data
+        # Chart data (JSON strings)
+        "chart_data": chart_data_json,
+        
+        # Chart data (for tables, kept as lists)
         "projects_by_country": projects_by_country_list,
         "language_dist": language_dist_list,
         "language_names": language_names,
