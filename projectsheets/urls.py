@@ -1,4 +1,4 @@
-from .views import home_view, create_project_sheet, serve_project_image, project_list, project_detail_view, edit_project_sheet, delete_project_sheet, view_project_pdf, search_projects_ajax
+from .views import home_view, dashboard, create_project_sheet, serve_project_image, project_list, project_detail_view, edit_project_sheet, delete_project_sheet, view_project_pdf, search_projects_ajax
 from django.urls import path    
 
 urlpatterns = [
@@ -11,4 +11,5 @@ urlpatterns = [
     path("projects/<int:pk>/edit/", edit_project_sheet, name="edit_project_sheet"),
     path("projects/<int:pk>/delete/", delete_project_sheet, name="delete_project_sheet"),
     path("projects/<int:pk>/pdf/", view_project_pdf, name="view_project_pdf"),
+    path("dashboard/", dashboard, name="dashboard"),
 ]

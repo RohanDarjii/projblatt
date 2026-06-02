@@ -1,12 +1,17 @@
 from django.shortcuts import render,redirect,get_object_or_404
 from django.http import HttpResponse, JsonResponse
+from httpcore import request
 from .models import ProjectImage, ProjectSheet
 from .forms import ProjectSheetForm
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from .utils import PDFGenerator
-from django.db.models import Q
+from django.db.models import Q, Count, Case, When, IntegerField, F, DecimalField, Sum, Avg
+from django.db.models.functions import ExtractYear, TruncMonth
+from django.utils import timezone
+from datetime import timedelta
+from collections import defaultdict
 from .countries import ALL_COUNTRIES
 
 @login_required(login_url='home')
@@ -276,4 +281,193 @@ def view_project_pdf(request, pk):
     except Exception as e:
         print(f"Error generating PDF: {e}")
         return HttpResponse("An error occurred while generating the PDF.", status=500)
+
+
+@login_required(login_url='home')
+def dashboard(request):
+    is_superuser = request.user.is_superuser
+    if not (
+        request.user.is_superuser or
+        request.user.groups.filter(
+            name="Project Manager"
+        ).exists()
+    ):
+        raise PermissionDenied(
+            "You don't have access to the dashboard."
+        )
+    
+    # ===== KPI CARDS =====
+    total_projects = ProjectSheet.objects.count()
+    total_countries = ProjectSheet.objects.values('country').distinct().count()
+    total_images = ProjectImage.objects.count()
+    languages_available = ProjectSheet.objects.values('language').distinct().count()
+    
+    # Projects missing images and descriptions
+    projects_missing_images = ProjectSheet.objects.filter(images__isnull=True).count()
+    projects_missing_descriptions = ProjectSheet.objects.filter(
+        Q(task_description__isnull=True) | Q(task_description='') |
+        Q(performance_description__isnull=True) | Q(performance_description='')
+    ).count()
+    
+    # Calculate averages
+    avg_images_per_project = (
+        ProjectSheet.objects.annotate(image_count=Count('images'))
+        .aggregate(avg=Avg('image_count'))['avg'] or 0
+    )
+    avg_images_per_project = round(float(avg_images_per_project), 2)
+    
+    # Data Quality Score (0-100)
+    total_quality_checks = total_projects * 3  # 3 quality checks per project
+    quality_passes = (
+        (total_projects - projects_missing_images) +
+        (total_projects - projects_missing_descriptions) +
+        (ProjectSheet.objects.filter(client_info__isnull=False).exclude(client_info='').count())
+    )
+    data_quality_score = int((quality_passes / total_quality_checks * 100)) if total_quality_checks > 0 else 0
+    
+    # ===== PROJECTS BY COUNTRY =====
+    projects_by_country = (
+        ProjectSheet.objects.values('country')
+        .annotate(count=Count('id'))
+        .order_by('-count')[:10]
+    )
+    projects_by_country_list = list(projects_by_country)
+    
+    # ===== LANGUAGE DISTRIBUTION =====
+    language_dist = (
+        ProjectSheet.objects.values('language')
+        .annotate(count=Count('id'))
+        .order_by('-count')
+    )
+    language_dist_list = list(language_dist)
+    language_names = {code: name for code, name in ProjectSheet.LANGUAGE_CHOICES}
+    
+    # ===== PROJECTS BY YEAR =====
+    projects_by_year = (
+        ProjectSheet.objects.annotate(year=ExtractYear('date_from'))
+        .values('year')
+        .annotate(count=Count('id'))
+        .order_by('year')
+    )
+    projects_by_year_list = list(projects_by_year)
+    
+    # ===== LATEST PROJECTS TABLE (Top 10) =====
+    latest_projects = (
+        ProjectSheet.objects.annotate(
+            image_count=Count('images'),
+            has_description=Case(
+                When(
+                    task_description__isnull=False,
+                    task_description__gt='',
+                    then=True
+                ),
+                default=False,
+                output_field=IntegerField()
+            )
+        )
+        .order_by('-created_at')[:10]
+    )
+    
+    # ===== DATA QUALITY PANEL =====
+    projects_missing_images_list = (
+        ProjectSheet.objects.filter(images__isnull=True)
+        .values_list('project_number', 'project_title', 'country')[:5]
+    )
+    
+    projects_missing_descriptions_list = (
+        ProjectSheet.objects.filter(
+            Q(task_description__isnull=True) | Q(task_description='')
+        )
+        .values_list('project_number', 'project_title')[:5]
+    )
+    
+    projects_missing_client_info = (
+        ProjectSheet.objects.filter(
+            Q(client_info__isnull=True) | Q(client_info='')
+        )
+        .values_list('project_number', 'project_title')[:5]
+    )
+    
+    # ===== TOP 10 COUNTRIES (by project count) =====
+    top_countries = (
+        ProjectSheet.objects.values('country')
+        .annotate(count=Count('id'))
+        .order_by('-count')[:10]
+    )
+    top_countries_list = list(top_countries)
+    
+    # ===== TOP 10 CLIENTS =====
+    top_clients = (
+        ProjectSheet.objects.values('client_info')
+        .filter(client_info__isnull=False)
+        .exclude(client_info='')
+        .annotate(count=Count('id'))
+        .order_by('-count')[:10]
+    )
+    top_clients_list = list(top_clients)
+    
+    # ===== PROJECTS CREATED PER MONTH (Last 12 months) =====
+    months_ago = timezone.now() - timedelta(days=365)
+    projects_per_month = (
+        ProjectSheet.objects.filter(created_at__gte=months_ago)
+        .annotate(month=TruncMonth('created_at'))
+        .values('month')
+        .annotate(count=Count('id'))
+        .order_by('month')
+    )
+    projects_per_month_list = list(projects_per_month)
+    
+    # ===== PROJECTS BY LANGUAGE DETAILED =====
+    projects_by_language = (
+        ProjectSheet.objects.values('language')
+        .annotate(count=Count('id'))
+        .order_by('-count')
+    )
+    projects_by_language_list = list(projects_by_language)
+    
+    # ===== RECENT ACTIVITY FEED =====
+    recent_activity = ProjectSheet.objects.order_by('-created_at')[:8]
+    
+    # ===== WORLD MAP DATA (Country Count) =====
+    # Convert country names to codes for Leaflet visualization
+    country_data = {}
+    for country in ProjectSheet.objects.values('country').annotate(count=Count('id')).order_by('-count'):
+        country_name = country['country']
+        country_data[country_name] = country['count']
+    
+    context = {
+        # KPI Cards
+        "total_projects": total_projects,
+        "total_countries": total_countries,
+        "total_images": total_images,
+        "languages_available": languages_available,
+        "projects_missing_images": projects_missing_images,
+        "projects_missing_descriptions": projects_missing_descriptions,
+        "avg_images_per_project": avg_images_per_project,
+        "data_quality_score": data_quality_score,
         
+        # Chart data
+        "projects_by_country": projects_by_country_list,
+        "language_dist": language_dist_list,
+        "language_names": language_names,
+        "projects_by_year": projects_by_year_list,
+        
+        # Tables
+        "latest_projects": latest_projects,
+        "projects_missing_images_list": projects_missing_images_list,
+        "projects_missing_descriptions_list": projects_missing_descriptions_list,
+        "projects_missing_client_info": projects_missing_client_info,
+        
+        # Additional charts
+        "top_countries": top_countries_list,
+        "top_clients": top_clients_list,
+        "projects_per_month": projects_per_month_list,
+        "projects_by_language": projects_by_language_list,
+        
+        # Other
+        "recent_activity": recent_activity,
+        "country_data": country_data,
+        "is_superuser": is_superuser,
+    }
+    
+    return render(request, "dashboard.html", context)

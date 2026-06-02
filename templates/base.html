@@ -29,6 +29,15 @@
                 <a href="{% url 'home' %}" class="nav-item">Home</a>
                 {% if user.is_authenticated %}
                     <a href="{% url 'project_list' %}" class="nav-item">Projects</a>
+                    {% if user.is_superuser %}
+                        <a href="{% url 'dashboard' %}" class="nav-item">Dashboard</a>
+                    {% else %}
+                        {% for group in user.groups.all %}
+                            {% if group.name == 'Project Manager' %}
+                                <a href="{% url 'dashboard' %}" class="nav-item">Dashboard</a>
+                            {% endif %}
+                        {% endfor %}
+                    {% endif %}
                     <a href="{% url 'create_project_sheet' %}" class="nav-item nav-item-cta">New Sheet</a>
                 {% endif %}
                 
